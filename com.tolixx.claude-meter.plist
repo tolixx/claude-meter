@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.tolixx.claude-meter</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>__DIR__/awtrix_limits.py</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>AWTRIX_HOST</key><string>__AWTRIX_HOST__</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/tmp/claude-meter.log</string>
+  <key>StandardErrorPath</key><string>/tmp/claude-meter.log</string>
+</dict>
+</plist>
