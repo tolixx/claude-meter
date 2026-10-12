@@ -7,7 +7,7 @@ Claude Code usage limits and session state on an [AWTRIX 3](https://blueforcer.g
 - **`7% 49%`**: the 5 hour window and the week. The 5 hour number is green under 50%, yellow under 80%, red above.
 - **Bottom row**: weekly usage as a bar. The white pixel is how much of the week has passed, so you can see if you are ahead of your budget. The week colour follows that pace: green while usage stays behind time, yellow when it gets ahead, red when it is more than 15 points ahead or above 90%.
 - **Top right indicator**: all Claude Code sessions together. Blinking red: one is waiting for you (a permission prompt or a question). Green: something is working. Off: idle.
-- **`WAIT <project>`** pops up once when a session starts waiting, with the name of its folder.
+- **`WAIT <project>`** pops up once with a short beep when a session starts waiting, with the name of its folder.
 
 No API keys and no requests to Anthropic. Claude Code already passes `rate_limits` to the status line command, and hooks report what each session is doing. Everything stays on your machine and the clock on your LAN. Python 3 standard library only.
 
@@ -85,6 +85,7 @@ Environment variables for `awtrix_limits.py`:
 | `AWTRIX_HOST` | (required) | IP or hostname of the clock |
 | `AWTRIX_APP` | `claude` | name of the custom app on the clock |
 | `AWTRIX_ICON` | none | icon to show next to the numbers; it must already be on the clock |
+| `AWTRIX_WAIT_SOUND` | a short two-note beep | [RTTTL](https://blueforcer.github.io/awtrix3/#/api?id=custom-apps-and-notifications) melody the clock's buzzer plays with `WAIT`; empty for silence. The clock's own sound setting must be on |
 | `CLAUDE_LIMITS_CACHE` | `~/.claude/statusline-limits-cache.json` | also read by `save_limits.py` |
 
 A fresh session has no `rate_limits` until its first request, so the cache keeps the last values. Limits belong to the account, so they are still right; a window that has already reset counts as 0%.

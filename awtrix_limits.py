@@ -27,6 +27,8 @@ import urllib.request
 AWTRIX = os.environ.get("AWTRIX_HOST", "")  # clock IP or hostname, required
 APP = os.environ.get("AWTRIX_APP", "claude")
 ICON = os.environ.get("AWTRIX_ICON", "")  # icon id or name already on the clock, empty for none
+# RTTTL melody played with the WAIT notification (the clock's buzzer), empty for silence
+WAIT_SOUND = os.environ.get("AWTRIX_WAIT_SOUND", "wait:d=16,o=6,b=180:e,p,a")
 CACHE = os.path.expanduser(os.environ.get("CLAUDE_LIMITS_CACHE", "~/.claude/statusline-limits-cache.json"))
 STATE_DIR = os.path.expanduser("~/.claude/agent-state")
 TICK = 2           # s between file checks
@@ -236,9 +238,11 @@ def main() -> None:
                                   if st == "wait" and prev.get(sid, ("", ""))[0] != "wait"]
         prev, first = sessions, False
         for proj in fresh:
+            body = {"text": f"WAIT {proj}", "color": RED, "duration": 6, "stack": False}
+            if WAIT_SOUND:
+                body["rtttl"] = WAIT_SOUND
             try:
-                post("/api/notify", {"text": f"WAIT {proj}", "color": RED,
-                                     "duration": 6, "stack": False})
+                post("/api/notify", body)
                 log(f"notify wait {proj}")
             except Exception as e:
                 log(f"notify failed: {e}")
