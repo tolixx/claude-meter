@@ -23,12 +23,20 @@ CLIENT_FRESH = 15  # s: the handheld counts as connected if it polled this recen
 POLL = 0.25
 
 
-def summary(tool: str, inp: dict) -> str:
-    """One line the handheld can show: the command, the file, the URL."""
+def summary(tool: str, inp: dict, cwd: str) -> str:
+    """One line the handheld can show: the command, the file, the URL.
+
+    Paths inside the project become relative and the home folder becomes ~,
+    so the screen (and any video of it) doesn't show your username.
+    """
+    text = json.dumps(inp)
     for key in ("command", "file_path", "notebook_path", "url", "query", "pattern", "prompt"):
         if isinstance(inp.get(key), str) and inp[key]:
-            return inp[key][:300]
-    return json.dumps(inp)[:300]
+            text = inp[key]
+            break
+    if cwd:
+        text = text.replace(cwd.rstrip("/") + "/", "")
+    return text.replace(os.path.expanduser("~"), "~")[:300]
 
 
 def client_connected() -> bool:
@@ -71,7 +79,7 @@ def main() -> None:
         "session": data.get("session_id", ""),
         "project": project,
         "tool": tool,
-        "summary": summary(tool, data.get("tool_input") or {}),
+        "summary": summary(tool, data.get("tool_input") or {}, data.get("cwd", "")),
         "ts": time.time(),
     })
     try:
