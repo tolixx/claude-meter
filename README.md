@@ -90,6 +90,48 @@ Environment variables for `awtrix_limits.py`:
 
 A fresh session has no `rate_limits` until its first request, so the cache keeps the last values. Limits belong to the account, so they are still right; a window that has already reset counts as 0%.
 
+## Handheld remote (optional)
+
+An Anbernic RG40XX H on muOS shows the same sessions and limits, and answers permission prompts: A allows, B denies.
+
+```
+Claude Code ── PermissionRequest hook ──> permission_hook.py ──> ~/.claude/agent-remote/pending/
+                                                ^                          │
+                                     decisions/ │                          v
+                                                └──── remote_server.py <── HTTP (LAN, token) ── handheld
+```
+
+- `remote_server.py` serves `GET /state` (sessions, pending prompts, limits) and `POST /decide` on port 8787. Every request needs the `X-Token` header; the token is created on the first run in `~/.claude/agent-remote/token`.
+- `permission_hook.py` waits up to 90 s for a button, but only while the handheld is polling. With the app closed it returns at once and you get the normal prompt in the terminal. It never approves anything by itself: no answer, no decision.
+- `handheld/agent_remote.py` is Python 3 standard library only. It draws with the SDL2 and SDL2_ttf libraries muOS already ships, through ctypes.
+
+Approving a prompt runs a command on your Mac, so keep the token secret and the port on your LAN.
+
+1. **Server** (macOS):
+
+   ```sh
+   sed -e "s|__DIR__|$PWD|g" com.tolixx.claude-remote.plist > ~/Library/LaunchAgents/com.tolixx.claude-remote.plist
+   launchctl load ~/Library/LaunchAgents/com.tolixx.claude-remote.plist
+   python3 remote_server.py --token
+   ```
+
+2. **Hook**, in `~/.claude/settings.json` (not async, it has to wait for the answer):
+
+   ```json
+   "PermissionRequest": [{"hooks": [{"type": "command", "command": "python3 /path/to/claude-meter/permission_hook.py", "timeout": 120}]}]
+   ```
+
+3. **Handheld.** Turn on Wi-Fi and SSH in muOS (Configuration → Web Services), then:
+
+   ```sh
+   ssh root@<handheld> mkdir -p /mnt/mmc/MUOS/application/.agentremote
+   scp handheld/agent_remote.py root@<handheld>:/mnt/mmc/MUOS/application/.agentremote/
+   scp "handheld/Agent Remote.sh" root@<handheld>:/mnt/mmc/MUOS/application/
+   echo '{"server": "http://<mac>:8787", "token": "<token>"}' | ssh root@<handheld> 'cat > /mnt/mmc/MUOS/application/.agentremote/config.json'
+   ```
+
+   Then open Applications → Agent Remote. MENU or SELECT+START quits. Errors go to `.agentremote/log.txt`.
+
 ## License
 
 MIT
