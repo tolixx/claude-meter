@@ -55,6 +55,7 @@ Interrupting Claude or rejecting a prompt fires no hook, so a `wait` would stick
      ],
      "Stop": [{"hooks": [{"type": "command", "command": "python3 /path/to/claude-meter/agent_state_hook.py done", "async": true}]}],
      "StopFailure": [{"hooks": [{"type": "command", "command": "python3 /path/to/claude-meter/agent_state_hook.py done", "async": true}]}],
+     "SessionStart": [{"matcher": "startup|resume|clear", "hooks": [{"type": "command", "command": "python3 /path/to/claude-meter/agent_state_hook.py done", "async": true}]}],
      "SessionEnd": [{"hooks": [{"type": "command", "command": "python3 /path/to/claude-meter/agent_state_hook.py end", "async": true}]}]
    }
    ```
@@ -106,6 +107,8 @@ Claude Code ── PermissionRequest hook ──> permission_hook.py ──> ~/.
 - `handheld/agent_remote.py` is Python 3 standard library only. It draws with the SDL2 and SDL2_ttf libraries muOS already ships, through ctypes.
 
 Approving a prompt runs a command on your Mac, so keep the token secret and the port on your LAN.
+
+To keep some projects off the handheld (for a demo, or work you don't want on a second screen), list their folder names in `~/.claude/agent-remote/hide`, one per line. Their prompts skip the handheld and go straight to the terminal.
 
 1. **Server** (macOS):
 

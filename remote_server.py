@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Small LAN API for a handheld remote: session states, limits and permission prompts.
 
-GET  /state   sessions (wait first), pending permission prompts, limits
+GET  /state   sessions (wait first), pending permission prompts, limits;
+              projects listed in ~/.claude/agent-remote/hide are left out
 POST /decide  {"id": "...", "behavior": "allow" | "deny"}
 
 Every request needs the X-Token header. The token is generated on the first
@@ -24,6 +25,7 @@ BASE = os.path.expanduser("~/.claude/agent-remote")
 PENDING = os.path.join(BASE, "pending")
 DECISIONS = os.path.join(BASE, "decisions")
 SEEN = os.path.join(BASE, "client-seen")
+HIDE = os.path.join(BASE, "hide")  # project names to keep off the handheld, one per line
 PORT = int(os.environ.get("CLAUDE_REMOTE_PORT", "8787"))
 PENDING_STALE = 600  # s: a hook never waits this long, so older files are leftovers
 ORDER = {"wait": 0, "run": 1, "done": 2}
@@ -67,11 +69,20 @@ def read_pending(now: float) -> list:
     return sorted(out, key=lambda p: p["ts"])
 
 
+def hidden() -> set:
+    try:
+        with open(HIDE) as fh:
+            return {line.strip() for line in fh if line.strip()}
+    except OSError:
+        return set()
+
+
 def state(now: float) -> dict:
-    pending = read_pending(now)
+    hide = hidden()
+    pending = [p for p in read_pending(now) if p["project"] not in hide]
     asking = {p["session"] for p in pending}
     sessions = [{"id": sid, "state": "wait" if sid in asking else st, "project": proj}
-                for sid, (st, proj) in read_sessions(now).items()]
+                for sid, (st, proj) in read_sessions(now).items() if proj not in hide]
     sessions.sort(key=lambda s: (ORDER.get(s["state"], 3), s["project"]))
     return {"sessions": sessions, "pending": pending, "limits": read_limits(now) or {}}
 

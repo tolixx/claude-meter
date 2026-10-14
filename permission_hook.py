@@ -17,6 +17,7 @@ BASE = os.path.expanduser("~/.claude/agent-remote")
 PENDING = os.path.join(BASE, "pending")
 DECISIONS = os.path.join(BASE, "decisions")
 SEEN = os.path.join(BASE, "client-seen")  # touched by the server on every poll
+HIDE = os.path.join(BASE, "hide")  # projects the handheld does not show
 WAIT = float(os.environ.get("CLAUDE_REMOTE_WAIT", "90"))  # s to wait for a button
 CLIENT_FRESH = 15  # s: the handheld counts as connected if it polled this recently
 POLL = 0.25
@@ -37,6 +38,14 @@ def client_connected() -> bool:
         return False
 
 
+def is_hidden(project: str) -> bool:
+    try:
+        with open(HIDE) as fh:
+            return project in {line.strip() for line in fh}
+    except OSError:
+        return False
+
+
 def write_json(path: str, data: dict) -> None:
     with open(path + ".tmp", "w") as fh:
         json.dump(data, fh)
@@ -48,7 +57,8 @@ def main() -> None:
         data = json.load(sys.stdin) or {}
     except Exception:
         return
-    if not client_connected():
+    project = os.path.basename(data.get("cwd", "").rstrip("/")) or "claude"
+    if not client_connected() or is_hidden(project):
         return
     os.makedirs(PENDING, exist_ok=True)
     os.makedirs(DECISIONS, exist_ok=True)
@@ -59,7 +69,7 @@ def main() -> None:
     write_json(pending, {
         "id": rid,
         "session": data.get("session_id", ""),
-        "project": os.path.basename(data.get("cwd", "").rstrip("/")) or "claude",
+        "project": project,
         "tool": tool,
         "summary": summary(tool, data.get("tool_input") or {}),
         "ts": time.time(),
